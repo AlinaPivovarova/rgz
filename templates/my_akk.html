@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block main %}
+    <h1>Мой профиль</h1>
+
+    <h2>Информация о пользователе:</h2>
+    <p>Имя: {{ user.username }}</p>
+    <p>Возраст: {{ user.age }}</p>
+    <p>Пол: {{ user.gender }}</p>
+    <p>Пол для поиска: {{ user.preferred_gender }}</p>
+    <p>О себе: {{ user.about }}</p>
+    <!-- Дополните информацию о пользователе в соответствии с вашей модели -->
+
+    <h2>Действия:</h2>
+    <a href="{{ url_for('edit_profile') }}">Редактировать профиль</a>
+    <a href="{{ url_for('hide_profile') }}">Скрыть профиль</a>
+    <a href="{{ url_for('delete_account') }}">Удалить аккаунт</a>
+    <p>
+        <a href="/" style="color: white; border: 2px solid rgb(96, 159, 121); padding: 5px 10px; border-radius: 5px; margin-right: 10px;">Вернуться на главную</a>
+    </p>
+{% endblock %}
