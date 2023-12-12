@@ -54,7 +54,7 @@ def save_photo(photo):
         photo_filename = "anonymous_user_default_filename.jpg"
     
     # Определяем путь для сохранения файла
-    photo_path = os.path.join(app.root_path, 'static', photo_filename)
+    photo_path = os.path.join('static', photo_filename)
 
     # Сохраняем файл на сервере
     photo.save(photo_path)
@@ -67,18 +67,28 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('glavnaya'))
 
-    error = None
+    error = ''
 
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        age = int(request.form['age'])
+        age = request.form['age']
         gender = request.form['gender']
         preferred_gender = request.form['preferred_gender']
         about = request.form['about']
         photo = request.files['photo']
 
-        if username and password and age and gender and preferred_gender:
+        if not username:
+            error = 'Заполните поле "Имя".'
+        elif not password:
+            error = 'Заполните поле "Пароль".'
+        elif not age:
+            error = 'Заполните поле "Возраст".'
+        elif not gender:
+            error = 'Выберите пол в поле "Пол".'
+        elif not preferred_gender:
+            error = 'Выберите пол для поиска в поле "Пол для поиска".'
+        else:
             hashed_password = generate_password_hash(password)
             photo_filename = save_photo(photo)
 
@@ -96,11 +106,11 @@ def register():
             db.session.commit()
 
             return redirect(url_for('login'))
-        else:
-            error = 'Please fill in all the required fields.'
 
     return render_template('registr.html', error=error)
 
+
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -119,9 +129,9 @@ def login():
                 login_user(user)
                 return redirect(url_for('glavnaya'))
             else:
-                error = 'Invalid password.'
+                error = 'Неверный пароль'
         else:
-            error = 'Username not found.'
+            error = 'Пользователь не найден'
 
     return render_template('login.html', error_message=error)
 
@@ -168,12 +178,69 @@ def edit_profile():
 @app.route('/hide_profile')
 @login_required
 def hide_profile():
-    # Измените настройки пользователя для скрытия профиля
+    user = current_user
+    user.hidden = True
+    db.session.commit()
     return redirect(url_for('my_akk'))
 
-@app.route('/delete_account')
+@app.route('/delete_account', methods=['GET', 'POST'])
 @login_required
 def delete_account():
-    # Удалите аккаунт пользователя из базы данных
-    logout_user()  # Выход из системы после удаления аккаунта
-    return redirect(url_for('glavnaya'))
+    if request.method == 'POST':
+        # Удалите аккаунт пользователя из базы данных
+        user_id = current_user.id
+        deleted_user = users.query.get(user_id)
+
+        db.session.delete(deleted_user)
+        db.session.commit()
+
+        logout_user()  # Выход из системы после удаления аккаунта
+        return redirect(url_for('glavnaya'))
+
+    return render_template('delete_account.html')
+
+
+@app.route('/poisk', methods=['GET', 'POST'])
+@login_required
+def search():
+    if request.method == 'POST':
+        # Получаем новые параметры поиска из формы
+        name = request.form['name']
+        age = request.form['age']
+    else:
+        # Получаем текущую информацию о поиске из параметров запроса
+        name = request.args.get('name')
+        age = request.args.get('age')
+
+    # Получаем пол для поиска из поля "пол для поиска" анкеты пользователя
+    preferred_gender = current_user.preferred_gender
+
+    # Формируем запрос к базе данных
+    query = users.query.filter(users.gender == preferred_gender, users.hidden == False)
+
+    if name:
+        query = query.filter(users.username.ilike(f'%{name}%'))
+    if age:
+        query = query.filter(users.age == age)
+
+    # Получаем текущую страницу поиска из параметров запроса
+    offset = int(request.args.get('offset', 0))
+
+    # Применяем смещение для определения следующих результатов поиска
+    query = query.offset(offset)
+
+    # Ограничиваем количество результатов поиска до 3
+    query = query.limit(3)
+
+    results = query.all()
+
+    return render_template('poisk.html', results=results, name=name, age=age, offset=offset + 3, show_previous=offset > 0)
+
+
+@app.route('/unhide_profile')
+@login_required
+def unhide_profile():
+    user = current_user
+    user.hidden = False
+    db.session.commit()
+    return redirect(url_for('my_akk'))
