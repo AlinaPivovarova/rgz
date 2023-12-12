@@ -10,6 +10,7 @@ class users(db.Model, UserMixin):
     preferred_gender = db.Column(db.String(10), nullable=False)
     about = db.Column(db.String(200))
     photo = db.Column(db.String(200))
+    hidden = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return f'id:{self.id}, username:{self.username}'
