@@ -50,7 +50,6 @@ def save_photo(photo):
         photo_filename = str(photo.filename) + str(current_user.id)
     else:
         # Обработка для анонимного пользователя
-        # Например, вы можете использовать другое значение для имени файла или генерировать уникальное имя.
         photo_filename = "anonymous_user_default_filename.jpg"
     
     # Определяем путь для сохранения файла
@@ -122,7 +121,8 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = users.query.filter_by(username=username).first()
+        user = users.query.filter_by(username=username).first()#поиск пользователя в базе данных по имени пользователя и получение 
+        #первого совпадения с помощью метода first()
 
         if user:
             if check_password_hash(user.password, password):
@@ -144,9 +144,9 @@ def logout():
 
 
 @app.route('/my_akk')
-@login_required  # Добавьте этот декоратор, чтобы требовать аутентификации пользователя для доступа к этой странице
+@login_required  #это декоратор, чтобы требовать аутентификации пользователя для доступа к этой странице
 def my_akk():
-    # Получите информацию о текущем пользователе из объекта current_user
+    # Получение информации о текущем пользователе из объекта current_user
     user = current_user
 
     return render_template('my_akk.html', user=user)
@@ -155,7 +155,7 @@ def my_akk():
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    user = current_user  # Получите информацию о текущем пользователе
+    user = current_user  # Получение информации о текущем пользователе
 
     if request.method == 'POST':
         # Обработка данных формы редактирования профиля
@@ -175,7 +175,7 @@ def edit_profile():
     return render_template('edit_profile.html', user=user)
 
 
-@app.route('/hide_profile')
+@app.route('/hide_profile')#скрытие пофиля
 @login_required
 def hide_profile():
     user = current_user
@@ -224,7 +224,9 @@ def search():
         query = query.filter(users.age == age)
 
     # Получаем текущую страницу поиска из параметров запроса
-    offset = int(request.args.get('offset', 0))
+    offset = int(request.args.get('offset', 0))# используется для получения значения параметра "offset" из запроса. 
+    #Если параметр присутствует в запросе, то будет возвращено его значение в виде строки. Если параметр отсутствует, 
+    #то будет возвращено значение по умолчанию, то есть 0.
 
     # Применяем смещение для определения следующих результатов поиска
     query = query.offset(offset)
@@ -237,7 +239,7 @@ def search():
     return render_template('poisk.html', results=results, name=name, age=age, offset=offset + 3, show_previous=offset > 0)
 
 
-@app.route('/unhide_profile')
+@app.route('/unhide_profile')#видимость профиля
 @login_required
 def unhide_profile():
     user = current_user
